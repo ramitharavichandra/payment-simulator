@@ -12,9 +12,7 @@ export default function PaymentPage() {
   const [paymentStatus, setPaymentStatus] =
     useState<"idle" | "processing" | "success" | "failure">("idle");
 
-  // ===============================
   // LISTEN PAYMENT STATUS
-  // ===============================
   const listenForStatus = (paymentId: string) => {
     supabase
       .channel("payment-status")
@@ -35,9 +33,7 @@ export default function PaymentPage() {
       .subscribe();
   };
 
-  // ===============================
   // HANDLE PAYMENT
-  // ===============================
   const handlePayment = async () => {
     if (!customerId.trim() || !amount.trim()) {
       alert("Please fill in all fields");
@@ -96,9 +92,7 @@ export default function PaymentPage() {
     setCustomerId("");
   };
 
-  // ===============================
   // SUCCESS UI
-  // ===============================
   if (paymentStatus === "success") {
     return (
       <div style={{ minHeight: "100vh", background: "#080810", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -114,9 +108,7 @@ export default function PaymentPage() {
     );
   }
 
-  // ===============================
   // FAILURE UI
-  // ===============================
   if (paymentStatus === "failure") {
     return (
       <div style={{ minHeight: "100vh", background: "#080810", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -132,9 +124,7 @@ export default function PaymentPage() {
     );
   }
 
-  // ===============================
   // PROCESSING UI
-  // ===============================
   if (paymentStatus === "processing") {
     return (
       <div style={{ minHeight: "100vh", background: "#080810", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -148,85 +138,180 @@ export default function PaymentPage() {
     );
   }
 
-  // ===============================
   // PAYMENT FORM
-  // ===============================
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #080810 !important; }
+<>
+<style>{`
+return (
+<>
+<style>{`
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
-        .page { font-family: 'Syne', sans-serif; min-height: 100vh; background: #080810; color: #e2e2f0; display: flex; align-items: center; justify-content: center; padding: 40px 20px; position: relative; }
-        .bg-grid { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: linear-gradient(rgba(139,92,246,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.035) 1px, transparent 1px); background-size: 44px 44px; }
-        .orb1 { position: fixed; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 65%); top: -200px; right: -150px; pointer-events: none; z-index: 0; }
-        .orb2 { position: fixed; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 65%); bottom: -100px; left: -80px; pointer-events: none; z-index: 0; }
+body {
+  margin:0;
+  background:#080810 !important;
+}
 
-        .card { position: relative; z-index: 1; width: 100%; max-width: 420px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 40px 36px; display: flex; flex-direction: column; gap: 20px; }
+.page {
+  font-family:'Syne',sans-serif;
+  min-height:100vh;
+  background:#080810;
+  color:#e2e2f0;
+}
 
-        .card-header { text-align: center; margin-bottom: 8px; }
-        .card-icon { width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 16px; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 28px rgba(139,92,246,0.35); }
-        .card-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #e2e2f0; margin-bottom: 6px; }
-        .card-sub { font-size: 13px; color: #71717a; }
+/* SAME DASHBOARD BACKGROUND */
+.grid-bg{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(139,92,246,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(139,92,246,.035) 1px,transparent 1px);
+  background-size:44px 44px;
+}
 
-        .field { display: flex; flex-direction: column; gap: 6px; }
-        .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #52525b; }
-        .inp { width: 100%; padding: 13px 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #e2e2f0; outline: none; transition: border-color 0.2s, background 0.2s; }
-        .inp:focus { border-color: rgba(139,92,246,0.5); background: rgba(139,92,246,0.04); }
-        .inp::placeholder { color: #3f3f46; }
-        .inp:disabled { opacity: 0.5; }
-        .inp option { background: #18181b; color: #e2e2f0; }
+.orb1{
+  position:fixed;
+  width:600px;
+  height:600px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(139,92,246,.1),transparent 65%);
+  top:-200px;
+  right:-120px;
+}
 
-        .pay-btn { width: 100%; padding: 14px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(139,92,246,0.3); margin-top: 8px; }
-        .pay-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(139,92,246,0.45); }
-        .pay-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-      `}</style>
+.orb2{
+  position:fixed;
+  width:400px;
+  height:400px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(6,182,212,.07),transparent 65%);
+  bottom:-120px;
+  left:-80px;
+}
 
-      <div className="page">
-        <div className="bg-grid" /><div className="orb1" /><div className="orb2" />
+/* DASHBOARD CARD STYLE */
+.pay-card{
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.07);
+  backdrop-filter:blur(20px);
+  border-radius:22px;
+  padding:36px;
+  width:420px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
 
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title">Make Payment</div>
-            <div className="card-sub">Send money instantly to any account</div>
-          </div>
+.title{
+  font-size:22px;
+  font-weight:800;
+  text-align:center;
+}
 
-          <div className="field">
-            <label className="field-label">Currency</label>
-            <select className="inp" value={currency} onChange={e => setCurrency(e.target.value)}>
-              <option value="INR">🇮🇳 INR — Indian Rupee</option>
-              <option value="USD">🇺🇸 USD — US Dollar</option>
-              <option value="EUR">🇪🇺 EUR — Euro</option>
-            </select>
-          </div>
+.label{
+  font-size:11px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:#52525b;
+}
 
-          <div className="field">
-            <label className="field-label">Receiver Account ID</label>
-            <input
-              className="inp"
-              placeholder="e.g. 323338889"
-              value={customerId}
-              onChange={e => setCustomerId(e.target.value)}
-            />
-          </div>
+.input{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);
+  color:white;
+  outline:none;
+  font-family:'JetBrains Mono',monospace;
+}
 
-          <div className="field">
-            <label className="field-label">Amount</label>
-            <input
-              type="number"
-              className="inp"
-              placeholder="0.00"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-            />
-          </div>
+.input:focus{
+  border-color:rgba(139,92,246,.5);
+}
 
-          <button className="pay-btn" onClick={handlePayment} disabled={loading}>
-            {loading ? "Processing…" : "Pay Securely →"}
-          </button>
-        </div>
-      </div>
-    </>
-  );
+.pay-btn{
+  margin-top:10px;
+  padding:14px;
+  border-radius:12px;
+  border:none;
+  font-weight:700;
+  cursor:pointer;
+  color:white;
+  background:linear-gradient(135deg,#8b5cf6,#06b6d4);
+  transition:.25s;
+}
+
+.pay-btn:hover:not(:disabled){
+  transform:translateY(-2px);
+  box-shadow:0 10px 28px rgba(139,92,246,.4);
+}
+
+.pay-btn:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+`}</style>
+
+<div className="page">
+<div className="grid-bg"/>
+<div className="orb1"/>
+<div className="orb2"/>
+
+<div className="flex h-screen items-center justify-center">
+
+<div className="pay-card">
+
+<div className="title">
+Make Payment
+</div>
+
+<div>
+<div className="label">Currency</div>
+<select
+className="input"
+value={currency}
+onChange={(e)=>setCurrency(e.target.value)}
+>
+<option>INR</option>
+<option>USD</option>
+<option>EUR</option>
+</select>
+</div>
+
+<div>
+<div className="label">Receiver Account ID</div>
+<input
+className="input"
+placeholder="Enter Account ID"
+value={customerId}
+onChange={(e)=>setCustomerId(e.target.value)}
+/>
+</div>
+
+<div>
+<div className="label">Amount</div>
+<input
+type="number"
+className="input"
+placeholder="0.00"
+value={amount}
+onChange={(e)=>setAmount(e.target.value)}
+/>
+</div>
+
+<button
+onClick={handlePayment}
+disabled={loading}
+className="pay-btn"
+>
+{loading ? "Processing..." : "Pay Securely →"}
+</button>
+
+</div>
+</div>
+</div>
+</>
+);
 }
