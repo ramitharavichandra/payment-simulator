@@ -83,9 +83,9 @@ export default function Dashboard() {
     if (!prof) { setLoading(false); return; }
     setProfile(prof);
 
-    const accountId = prof.account_id; // ✅ text account_id for receiver_id matching
+    const accountId = prof.account_id; // text account_id for receiver_id matching
 
-    // ✅ FIX: sender_id is UUID, receiver_id is text account_id
+    // FIX: sender_id is UUID, receiver_id is text account_id
     const { data: pays } = await supabase
       .from("payments")
       .select("id, sender_id, receiver_id, amount, status, failure_reason, created_at")
