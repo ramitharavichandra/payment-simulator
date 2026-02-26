@@ -1,3 +1,5 @@
+// frontend + backend - Aarushi Deshmukh
+
 "use client";
 
 import { useState } from "react";
@@ -8,141 +10,152 @@ export default function PaymentPage() {
   const [currency, setCurrency] = useState("INR");
   const [customerId, setCustomerId] = useState("");
   const [amount, setAmount] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] =
-    useState<"idle" | "processing" | "success" | "failure">("idle");
+    useState<"idle" | "processing" | "success" | "failed">("idle");
 
+  // ===============================
   // LISTEN PAYMENT STATUS
-  const listenForStatus = (paymentId: string) => {
-    supabase
-      .channel("payment-status")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "payments",
-          filter: `id=eq.${paymentId}`,
-        },
-        (payload) => {
-          const status = String(payload.new.status).toLowerCase();
-          if (status === "success") { setPaymentStatus("success"); setLoading(false); }
-          if (status === "failure") { setPaymentStatus("failure"); setLoading(false); }
-        }
-      )
-      .subscribe();
-  };
+  // ===============================
 
+  // ===============================
   // HANDLE PAYMENT
+  // ===============================
   const handlePayment = async () => {
-    if (!customerId.trim() || !amount.trim()) {
-      alert("Please fill in all fields");
-      return;
-    }
 
-    setLoading(true);
-    setPaymentStatus("processing");
+  if (!customerId.trim() || !amount.trim()) {
+    alert("Fill all fields");
+    return;
+  }
 
-    const { data: { user } } = await supabase.auth.getUser();
+  setLoading(true);
+  setPaymentStatus("processing");
 
-    if (!user) {
-      alert("No session");
-      setLoading(false);
-      setPaymentStatus("idle");
-      return;
-    }
+  const { data: { user } } = await supabase.auth.getUser();
 
-    const { data: receiver } = await supabase
-      .from("profiles")
-      .select("id, account_id")
-      .eq("account_id", customerId.trim())
-      .maybeSingle();
+  if (!user) {
+    alert("No session");
+    setLoading(false);
+    setPaymentStatus("idle");
+    return;
+  }
 
-    if (!receiver) {
-      alert(`Receiver not found. Please check the Account ID.`);
-      setPaymentStatus("idle");
-      setLoading(false);
-      return;
-    }
+  // 🔎 Find receiver by account_id
+  const { data: receiver } = await supabase
+    .from("profiles")
+    .select("account_id")
+    .eq("account_id", customerId.trim())
+    .maybeSingle();
 
-    const { data, error } = await supabase
+  if (!receiver) {
+    alert("Receiver not found");
+    setLoading(false);
+    setPaymentStatus("idle");
+    return;
+  }
+
+  // ✅ Insert WITHOUT sending status (enum handled by DB)
+  const { data, error } = await supabase
+    .from("payments")
+    .insert({
+      sender_id: user.id,
+      receiver_id: receiver.account_id,
+      amount: Number(amount)
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    alert(error?.message ?? "Payment failed");
+    setPaymentStatus("failed");
+    setLoading(false);
+    return;
+  }
+
+  const paymentId = data.id;
+
+  // ⏳ Wait 5 seconds
+  setTimeout(async () => {
+
+    const { data: payment } = await supabase
       .from("payments")
-      .insert({
-        sender_id: user.id,
-        receiver_id: receiver.account_id,
-        amount: Number(amount),
-      })
-      .select()
+      .select("status")
+      .eq("id", paymentId)
       .single();
 
-    if (error) {
-      alert(error.message);
-      setPaymentStatus("idle");
+    if (!payment) {
+      setPaymentStatus("failed");
       setLoading(false);
       return;
     }
 
-    listenForStatus(data.id);
-  };
+    const status = String(payment.status).toUpperCase();
 
-  const resetForm = () => {
-    setPaymentStatus("idle");
+    if (status === "SUCCESS") {
+      setPaymentStatus("success");
+    } else if (status === "FAILURE") {
+      setPaymentStatus("failed");
+    } else {
+      setPaymentStatus("processing");
+    }
+
     setLoading(false);
-    setAmount("");
-    setCustomerId("");
-  };
 
+  }, 5000);
+};
+  // ===============================
   // SUCCESS UI
+  // ===============================
   if (paymentStatus === "success") {
     return (
-      <div style={{ minHeight: "100vh", background: "#080810", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 72, marginBottom: 16 }}>✅</div>
-          <p style={{ fontSize: 22, fontWeight: 800, color: "#34d399", fontFamily: "Syne, sans-serif", marginBottom: 8 }}>Payment Successful</p>
-          <p style={{ fontSize: 13, color: "#71717a", marginBottom: 28 }}>The amount has been transferred successfully.</p>
-          <button onClick={resetForm} style={{ padding: "10px 28px", borderRadius: 999, background: "rgba(52,211,153,0.15)", color: "#34d399", border: "1px solid rgba(52,211,153,0.3)", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "Syne, sans-serif" }}>
-            Make Another Payment
-          </button>
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="text-green-500 text-6xl">✅</div>
+          <p className="text-xl font-bold mt-4">
+            Payment Successful
+          </p>
         </div>
       </div>
     );
   }
 
-  // FAILURE UI
-  if (paymentStatus === "failure") {
+  // ===============================
+  // FAILED UI
+  // ===============================
+  if (paymentStatus === "failed") {
     return (
-      <div style={{ minHeight: "100vh", background: "#080810", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 72, marginBottom: 16 }}>❌</div>
-          <p style={{ fontSize: 22, fontWeight: 800, color: "#f87171", fontFamily: "Syne, sans-serif", marginBottom: 8 }}>Payment Failed</p>
-          <p style={{ fontSize: 13, color: "#71717a", marginBottom: 28 }}>Something went wrong. Please try again.</p>
-          <button onClick={resetForm} style={{ padding: "10px 28px", borderRadius: 999, background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "Syne, sans-serif" }}>
-            Try Again
-          </button>
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl">❌</div>
+          <p className="text-xl font-bold mt-4">
+            Payment Failed
+          </p>
         </div>
       </div>
     );
   }
 
+  // ===============================
   // PROCESSING UI
+  // ===============================
   if (paymentStatus === "processing") {
     return (
-      <div style={{ minHeight: "100vh", background: "#080810", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, border: "3px solid rgba(139,92,246,0.3)", borderTopColor: "#8b5cf6", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 24px" }} />
-          <p style={{ fontSize: 18, fontWeight: 700, color: "#e2e2f0", fontFamily: "Syne, sans-serif", marginBottom: 8 }}>Processing Payment...</p>
-          <p style={{ fontSize: 13, color: "#71717a" }}>Please wait, do not close this page</p>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-16 w-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"/>
+          <p className="font-semibold">
+            Processing payment...
+          </p>
         </div>
       </div>
     );
   }
 
+  // ===============================
   // PAYMENT FORM
+  // ===============================
   return (
-<>
-<style>{`
-return (
 <>
 <style>{`
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
