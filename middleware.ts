@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export function middleware(req:any){
+export function middleware(request: NextRequest) {
 
-  const token =
-    req.cookies.get("sb-access-token");
+  const path = request.nextUrl.pathname;
 
-  if(!token &&
-     !req.nextUrl.pathname.startsWith("/signin")
-  ){
-      return NextResponse.redirect(
-        new URL("/signin",req.url)
-      );
+  // NEVER block Next.js internal files
+  if (
+    path.startsWith("/_next") ||
+    path.startsWith("/api") ||
+    path === "/favicon.ico"
+  ) {
+    return NextResponse.next();
   }
 
+  // ✅ allow normal routing
   return NextResponse.next();
 }
