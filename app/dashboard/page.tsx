@@ -66,10 +66,27 @@ export default function Dashboard() {
     router.replace("/signin");
   };
 
-  const copyId = (id: string) => {
-    navigator.clipboard.writeText(id);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const copyId = async (id: string) => {
+    try {
+      if (typeof window !== "undefined" && navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(id);
+      } else {
+        // Fallback for HTTP / unsupported browsers
+        const textarea = document.createElement("textarea");
+        textarea.value = id;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+  
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error("Copy failed:", err);
+    }
   };
 
   const fetchData = async (uid: string) => {
@@ -275,15 +292,78 @@ export default function Dashboard() {
 
       <div className="dash">
         <div className="grid-bg" /><div className="orb1" /><div className="orb2" />
-        <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(8,8,16,0.8)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 50 }} className="content">
-          <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: -0.5, color: "#e2e2f0" }}>Pay<span style={{ color: "#8b5cf6" }}>Sim</span></span>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <span style={{ fontSize: 13, color: "#71717a" }}>{profile?.full_name}</span>
-            <button onClick={handleSignOut} style={{ fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 600, padding: "8px 16px", borderRadius: 8, cursor: "pointer", background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)", transition: "all 0.2s" }}>
-              Sign Out
-            </button>
-          </div>
-        </nav>
+        <nav
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "16px 32px",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+    background: "rgba(8,8,16,0.8)",
+    backdropFilter: "blur(20px)",
+    position: "sticky",
+    top: 0,
+    zIndex: 50,
+  }}
+  className="content"
+>
+  <span
+    style={{
+      fontSize: 16,
+      fontWeight: 800,
+      letterSpacing: -0.5,
+      color: "#e2e2f0",
+    }}
+  >
+    Pay<span style={{ color: "#8b5cf6" }}>Sim</span>
+  </span>
+
+  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+    <span style={{ fontSize: 13, color: "#71717a" }}>
+      {profile?.full_name}
+    </span>
+
+    {/* ✅ SUPPORT BUTTON */}
+    <button
+      onClick={() => router.push("/support")}
+      style={{
+        fontFamily: "'Syne', sans-serif",
+        fontSize: 13,
+        fontWeight: 600,
+        padding: "8px 16px",
+        borderRadius: 8,
+        cursor: "pointer",
+        background: "rgba(139,92,246,0.1)",
+        color: "#a78bfa",
+        border: "1px solid rgba(139,92,246,0.2)",
+        transition: "all 0.2s",
+      }}
+    >
+      Support
+    </button>
+
+    {/* SIGN OUT BUTTON */}
+    <button
+      onClick={handleSignOut}
+      style={{
+        fontFamily: "'Syne', sans-serif",
+        fontSize: 13,
+        fontWeight: 600,
+        padding: "8px 16px",
+        borderRadius: 8,
+        cursor: "pointer",
+        background: "rgba(239,68,68,0.1)",
+        color: "#f87171",
+        border: "1px solid rgba(239,68,68,0.2)",
+        transition: "all 0.2s",
+      }}
+    >
+      Sign Out
+    </button>
+  </div>
+</nav>
+
+
 
         <div className="main content">
           {/* Profile */}
